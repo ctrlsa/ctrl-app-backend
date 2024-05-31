@@ -4,10 +4,9 @@ import autoLoad from "@fastify/autoload";
 import fastifyStatic from "@fastify/static";
 import path from "path";
 import { fileURLToPath } from "url";
-import { Bot, InlineKeyboard } from "grammy";
+import { Bot, InlineKeyboard, InlineQueryResultBuilder } from "grammy";
 
 import { config } from "./config.js";
-
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -53,11 +52,27 @@ app.addHook("onClose", async (instance, done) => {
 });
 
 bot.command("start", async (ctx) => {
+
   const keyboard = new InlineKeyboard();
+  keyboard.webApp("Open my CTRL wallet", config.WEBAPP_URL);
+  keyboard.switchInline("Invite contact");
 
-  keyboard.webApp("Open CTRL", config.WEBAPP_URL);
+  await ctx.reply("What would you like to do?", { reply_markup: keyboard });
+});
 
-  await ctx.reply("Press button bellow to open the wallet", { reply_markup: keyboard });
+bot.on("inline_query", async (ctx) => {
+
+  const keyboard = new InlineKeyboard().url("Open CTRL", config.TG_APP_URL);
+
+  const result = InlineQueryResultBuilder
+   .article("id-0", "Invite contact to try CTRL", { reply_markup: keyboard })
+   .text("You've been invited to try the CTRL wallet!");
+
+  await ctx.answerInlineQuery(
+    [result],
+    { cache_time: 0 },
+  );
+
 });
 
 const startServer = async () => {
