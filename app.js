@@ -5,9 +5,9 @@ import fastifyStatic from "@fastify/static";
 import path from "path";
 import { fileURLToPath } from "url";
 import { Bot, InlineKeyboard, InlineQueryResultBuilder } from "grammy";
+import storage from 'node-persist';
 
 import { config } from "./config.js";
-
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,9 +15,7 @@ const __dirname = path.dirname(__filename);
 // Pass --options via CLI arguments in command to enable these options.
 const options = {};
 
-const app = Fastify({
-  logger: true
-});
+const app = Fastify({ logger: true });
 
 const bot = new Bot(config.BOT_TOKEN);
 
@@ -72,8 +70,32 @@ bot.on("inline_query", async (ctx) => {
     [result],
     { cache_time: 0 },
   );
-
 });
+
+/* TODO add default route */
+app.get('/add-user-key/*', async function handler (request, reply) {
+
+  console.log("url: " + request.url);
+
+  var urlParts = request.url.split("/");
+  if (urlParts.length != 4) {
+    return reply.code(400).send();
+    // TODO: more verbose error
+  }
+  var userId = urlParts[2];
+  var publicKey = urlParts[3];
+  // TODO validation for bad userId and bad publicKey?
+
+  await storage.setItem(userId, publicKey);
+
+  // TODO do this validation better and response better
+  var savedPublicKey = await storage.getItem(userId);
+  if (savedPublicKey !== publicKey) {
+    return reply.code(500).send();
+  }
+
+  return reply.code(200).send();
+})
 
 const startServer = async () => {
   try {
@@ -84,6 +106,9 @@ const startServer = async () => {
     });
 
     console.log("Server listening on " + config.APP_PORT);
+
+    await storage.init({dir: "../ctrl-data/users-keys/"}); // TODO: take this out into a var
+
   } catch (err) {
     console.error(err);
     process.exit(1);
