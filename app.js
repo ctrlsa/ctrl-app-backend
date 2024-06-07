@@ -75,23 +75,25 @@ bot.on("inline_query", async (ctx) => {
 /* TODO add default route */
 app.get('/add-user-key/*', async function handler (request, reply) {
 
-  console.log("url: " + request.url);
+  /* TODO probably better to put userId and publicKey in a JSON object in the body */
+  /* TODO security issues with sending it like this? */
+  /* TODO how can we only accept api requests from our webapp, not just anywhere? */
 
   var urlParts = request.url.split("/");
-  if (urlParts.length != 4) {
+  if (urlParts.length < 4) {
     return reply.code(400).send();
     // TODO: more verbose error
   }
   var userId = urlParts[2];
   var publicKey = urlParts[3];
-  // TODO validation for bad userId and bad publicKey?
+  // TODO validations for bad userId and bad publicKey?
 
   await storage.setItem(userId, publicKey);
 
-  // TODO do this validation better and response better
   var savedPublicKey = await storage.getItem(userId);
   if (savedPublicKey !== publicKey) {
     return reply.code(500).send();
+    // TODO more verbose error
   }
 
   return reply.code(200).send();
