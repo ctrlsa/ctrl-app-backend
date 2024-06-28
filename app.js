@@ -5,7 +5,7 @@ import fastifyStatic from "@fastify/static";
 import path from "path";
 import { fileURLToPath } from "url";
 import { Bot, InlineKeyboard, InlineQueryResultBuilder } from "grammy";
-import storage from 'node-persist';
+import storage from "node-persist";
 
 import { config } from "./config.js";
 
@@ -50,7 +50,6 @@ app.addHook("onClose", async (instance, done) => {
 });
 
 bot.command("start", async (ctx) => {
-
   const keyboard = new InlineKeyboard();
   keyboard.webApp("Open my CTRL wallet", config.WEBAPP_URL);
   keyboard.switchInline("Invite contact", "Invite");
@@ -63,14 +62,11 @@ bot.inlineQuery("Invite", async (ctx) => {
 
   const keyboard = new InlineKeyboard().url("Open CTRL", config.TG_APP_URL);
 
-  const result = InlineQueryResultBuilder
-   .article("id-0", "Invite contact to try CTRL", { reply_markup: keyboard })
-   .text("You've been invited to try the CTRL wallet!");
+  const result = InlineQueryResultBuilder.article("id-0", "Invite contact to try CTRL", {
+    reply_markup: keyboard
+  }).text("You've been invited to try the CTRL wallet!");
 
-  await ctx.answerInlineQuery(
-    [result],
-    { cache_time: 0 },
-  );
+  await ctx.answerInlineQuery([result], { cache_time: 0 });
 });
 
 /* TODO enforce numeric SOL amount. Do we have a max/min? Are we allowing decimals? */
@@ -153,36 +149,41 @@ bot.on('callback_query:data', async (ctx) => {
 
 });
 
-/* TODO add default route */
-app.get('/add-user-key/*', async function handler (request, reply) {
+// Default route
+app.setNotFoundHandler((_, reply) => {
+  reply.code(404).send("NOT FOUND");
+});
 
-  /* TODO probably better to put userId and publicKey in a JSON object in the body */
-  /* TODO security issues with sending it like this? */
-  /* TODO how can we only accept api requests from our webapp, not just anywhere? */
+// POST /user/key
+app.post("/user/key", async (request, reply) => {
+  try {
+    const { userId, publicKey } = request.body;
+    if (!userId || !publicKey) {
+      return reply.code(400).send("Need to send userId and publicKey in the body of the request");
+    }
 
-  var urlParts = request.url.split("/");
-  if (urlParts.length < 4) {
-    return reply.code(400).send();
-    // TODO: more verbose error
+    await storage.setItem(userId, publicKey);
+
+    if ((await storage.getItem(userId)) !== publicKey) {
+      return reply.code(500).send("Could not save key for user");
+    }
+
+    // Created
+    return reply.code(201).send();
+  } catch (err) {
+    console.error(err);
+    return reply.code(500).send("Internal server error");
   }
-  var userId = urlParts[2];
-  var publicKey = urlParts[3];
-  // TODO validations for bad userId and bad publicKey?
-
-  await storage.setItem(userId, publicKey);
-
-  var savedPublicKey = await storage.getItem(userId);
-  if (savedPublicKey !== publicKey) {
-    return reply.code(500).send();
-    // TODO more verbose error
-  }
-
-  return reply.code(200).send();
-})
+});
 
 const startServer = async () => {
   try {
     await app.listen({ port: config.APP_PORT, host: config.APP_HOST }, async (error) => {
+      if (error) {
+        console.error(error);
+        process.exit(1);
+      }
+
       await bot.start();
       console.log("Bot started");
       //await bot.api.setWebhook(config.WEBHOOK_URL + config.BOT_TOKEN, { secret_token: config.SECRET_TOKEN });
@@ -190,8 +191,7 @@ const startServer = async () => {
 
     console.log("Server listening on " + config.APP_PORT);
 
-    await storage.init({dir: "../ctrl-data/users-keys/"}); // TODO: take this out into a var
-
+    await storage.init({ dir: config.STORAGE_PATH });
   } catch (err) {
     console.error(err);
     process.exit(1);

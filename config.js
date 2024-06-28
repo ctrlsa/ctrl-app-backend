@@ -10,6 +10,7 @@ const BOT_TOKEN = process.env.BOT_TOKEN || ""; // Add your token from Telegram's
 const SECRET_TOKEN = process.env.SECRET_TOKEN || "";
 const PUBLIC_DIR = process.env.PUBLIC_DIR || "public";
 const SPA_FILENAME = process.env.SPA_FILENAME || "index.html";
+const STORAGE_PATH = process.env.STORAGE_PATH || "storage";
 
 export const config = {
   APP_HOST: APP_HOST,
@@ -19,5 +20,6 @@ export const config = {
   BOT_TOKEN: BOT_TOKEN,
   SECRET_TOKEN: SECRET_TOKEN,
   PUBLIC_DIR: PUBLIC_DIR,
-  SPA_FILENAME: SPA_FILENAME
+  SPA_FILENAME: SPA_FILENAME,
+  STORAGE_PATH: STORAGE_PATH
 };
