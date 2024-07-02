@@ -11,6 +11,8 @@ const SECRET_TOKEN = process.env.SECRET_TOKEN || "";
 const PUBLIC_DIR = process.env.PUBLIC_DIR || "public";
 const SPA_FILENAME = process.env.SPA_FILENAME || "index.html";
 const STORAGE_PATH = process.env.STORAGE_PATH || "storage";
+const ORIGIN = process.env.ORIGIN || "*";
+const RATE_LIMIT = process.env.RATE_LIMIT || 30; // Number of requests per minute
 
 export const config = {
   APP_HOST,
@@ -21,5 +23,7 @@ export const config = {
   SECRET_TOKEN,
   PUBLIC_DIR,
   SPA_FILENAME,
-  STORAGE_PATH
+  STORAGE_PATH,
+  ORIGIN,
+  RATE_LIMIT
 };

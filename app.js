@@ -1,10 +1,11 @@
-import api from "./api/api.js";
+import createApi from "./api/api.js";
 import bot from "./bot/bot.js";
 import { config } from "./config/config.js";
 import storage from "node-persist";
 
 const startServer = async () => {
   try {
+    const api = await createApi();
     await api.listen({ port: config.APP_PORT, host: config.APP_HOST }, async (error) => {
       if (error) {
         console.error(error);
