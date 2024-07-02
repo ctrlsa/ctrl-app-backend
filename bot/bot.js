@@ -23,20 +23,19 @@ bot.inlineQuery("Invite", async (ctx) => {
   await ctx.answerInlineQuery([result], { cache_time: 0 });
 });
 
-/* TODO enforce numeric SOL amount. Do we have a max/min? Are we allowing decimals? */
-/* TODO error handling */
-bot.inlineQuery(/send (.*) SOL/, async (ctx) => {
+bot.inlineQuery(/send (\d+(\.\d+)?) SOL/, async (ctx) => {
   const amountSol = ctx.match[1];
   const sendingUserId = ctx.inlineQuery.from.id;
+  const sendingUserName = ctx.inlineQuery.from.username;
 
   const keyboard = new InlineKeyboard().text(
     "Accept",
-    "accept-sol:" + sendingUserId + "-" + amountSol
+    "accept-sol:" + sendingUserId + "-" + sendingUserName + "-" + amountSol
   );
 
   const result = InlineQueryResultBuilder.article("id-0", "Send SOL", {
     reply_markup: keyboard
-  }).text(/* TODO username + */ " wants to send you " + amountSol + " SOL using the CTRL wallet.");
+  }).text("@" + sendingUserName + " wants to send you " + amountSol + " SOL using the CTRL wallet.");
 
   await ctx.answerInlineQuery([result], { cache_time: 0 });
 });
@@ -44,9 +43,10 @@ bot.inlineQuery(/send (.*) SOL/, async (ctx) => {
 bot.on("callback_query:data", async (ctx) => {
   const callbackData = ctx.callbackQuery.data;
   const [query, param] = callbackData.split(":");
+  const callbackUser = ctx.callbackQuery.from.username;
 
   if (query === "accept-sol") {
-    const [sendingUserId, amountSol] = param.split("-");
+    const [sendingUserId, sendingUserName, amountSol] = param.split("-");
     const receivingUserId = ctx.callbackQuery.from.id;
 
     /* Check if the receiving user already has a wallet */
@@ -57,33 +57,28 @@ bot.on("callback_query:data", async (ctx) => {
 
       /* 1. Send the original user a message to open the webapp through the bot */
       const message =
-        /* TODO username + */ " has accepted your " +
+        "@" + callbackUser + " has accepted your " +
         amountSol +
         " SOL transfer, please open the webapp using the link below to finalize the transaction.";
       const url = config.TG_APP_URL + "?startapp=" + publicKey + "-" + amountSol;
       const keyboard = new InlineKeyboard().url("Open CTRL", url);
-
-      try {
-        await bot.api.sendMessage(sendingUserId, message, { reply_markup: keyboard });
-      } catch (error) {
-        /* TODO handle error */
-      }
+      
+      await bot.api.sendMessage(sendingUserId, message, { reply_markup: keyboard });
 
       /* 2. Edit original inline query message sent to receiving user */
       const inlineMessageId = ctx.callbackQuery.inline_message_id;
 
-      try {
+      try {      
         await ctx.api.editMessageText(
           undefined,
           undefined,
-          "Thank you for accepting the transfer! You will receive your SOL once " /* + TODO username */ +
+          "Thank you for accepting the transfer! You will receive your SOL once @" + sendingUserName +
             " finalizes the transaction.",
           { inline_message_id: inlineMessageId }
         );
-        await ctx.answerCallbackQuery({ text: "User has a wallet." });
+        await ctx.answerCallbackQuery({ text: "User has a wallet. Message edited successfully" });
       } catch (error) {
-        /* TODO handle error */
-        await ctx.answerCallbackQuery({ text: "Failed to edit message." });
+        await ctx.answerCallbackQuery({ text: "User has a wallet. Failed to edit message." });
       }
     } else {
       /* The receiving user does NOT have a wallet */
@@ -100,10 +95,9 @@ bot.on("callback_query:data", async (ctx) => {
             " Looks like you do not have a CTRL wallet yet! Please open the CTRL app using the link below and create a wallet before you can start accepting SOL transactions.",
           { inline_message_id: inlineMessageId, reply_markup: keyboard }
         );
-        await ctx.answerCallbackQuery({ text: "User does not have a wallet." });
+        await ctx.answerCallbackQuery({ text: "User does not have a wallet. Message edited successfully." });
       } catch (error) {
-        /* TODO handle error */
-        await ctx.answerCallbackQuery({ text: "Failed to edit message." });
+        await ctx.answerCallbackQuery({ text: "User does not have a wallet. Failed to edit message." });
       }
     }
   }
