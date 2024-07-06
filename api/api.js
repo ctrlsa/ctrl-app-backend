@@ -20,23 +20,23 @@ const createApi = async () => {
 
   api.register(autoLoad, {
     dir: path.join(__dirname, "../plugins"),
-    options: Object.assign({}, options),
+    options: Object.assign({}, options)
   });
 
   await api.register(cors, {
     origin: config.ORIGIN,
     methods: ["POST"], // will add more methods as needed,
-    allowedHeaders: ["Content-Type", "Authorization"], // will add more headers as needed
+    allowedHeaders: ["Content-Type", "Authorization"] // will add more headers as needed
   });
 
   await api.register(rateLimit, {
     max: config.RATE_LIMIT,
-    timeWindow: "1 minute",
+    timeWindow: "1 minute"
   });
 
   api.register(fastifyStatic, {
     root: path.join(process.cwd(), config.PUBLIC_DIR),
-    prefix: "/",
+    prefix: "/"
   });
 
   // Receive webhook updates on path https://example.com/<BOT-TOKEN>
@@ -54,6 +54,12 @@ const createApi = async () => {
     }
   );
 
+  // // HSTS header - Ensure all connections are HTTPS - Will be added
+  // api.addHook("onSend", (request, reply, payload, next) => {
+  //   reply.header("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+  //   next();
+  // });
+
   api.addHook("onClose", async (instance, done) => {
     closeListeners.uninstall();
     done();
@@ -70,8 +76,7 @@ const createApi = async () => {
       const { userId, publicKey } = request.body;
       if (!userId || !publicKey) {
         return reply.code(400).send({
-          message:
-            "Need to send userId and publicKey in the body of the request",
+          message: "Need to send userId and publicKey in the body of the request"
         });
       }
 
