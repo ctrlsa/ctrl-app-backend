@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const APP_HOST = process.env.WEBAPP_HOST || "0.0.0.0";
-const APP_PORT = process.env.WEBAPP_PORT || 3000;
+const APP_PORT = process.env.WEBAPP_PORT || 8080;
 const WEBAPP_URL = process.env.WEBAPP_URL || ""; // Webapp url
 const TG_APP_URL = process.env.TG_APP_URL || ""; // Telegram web app url (from BotFather)
 const BOT_TOKEN = process.env.BOT_TOKEN || ""; // Add your token from Telegram's BotFather

@@ -1,12 +1,13 @@
 import closeWithGrace from "close-with-grace";
-import Fastify from "fastify";
+import {fastify as Fastify} from "fastify";
 import autoLoad from "@fastify/autoload";
+import cors from "@fastify/cors"
 import fastifyStatic from "@fastify/static";
 import path from "path";
 import { fileURLToPath } from "url";
 import { Bot, InlineKeyboard, InlineQueryResultBuilder } from "grammy";
 import storage from "node-persist";
-
+import fs from "fs";
 import { config } from "./config.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -15,7 +16,16 @@ const __dirname = path.dirname(__filename);
 // Pass --options via CLI arguments in command to enable these options.
 const options = {};
 
-const app = Fastify({ logger: true });
+const app = Fastify({
+  https: {
+    key: fs.readFileSync(path.join(__dirname, ".", "https", "fastify.key")),
+    cert: fs.readFileSync(path.join(__dirname, ".", "https", "fastify.cert"))
+  },
+  logger: true
+});
+await app.register(cors, { 
+  origin: true //['https://localhost:5173', 'https://bot.ctrl.finance:8080'],
+})
 
 const bot = new Bot(config.BOT_TOKEN);
 
